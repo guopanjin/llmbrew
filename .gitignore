@@ -1,0 +1,44 @@
+# Python cache
+__pycache__/
+*.pyc
+todo
+# env
+.venv/
+venv/
+
+# logs
+logs/
+*.log
+
+# model checkpoints
+checkpoints/
+*.ckpt
+*.pt
+
+# data (如果本地)
+data/
+
+# IDE
+.idea/
+
+# notebook cache
+.ipynb_checkpoints/
+
+datasets_links
+
+# related build folds
+dist
+dist_custom
+deepsklearn.egg-info
+build
+some_commands
+
+pypi_token
+
+tests/llm_test
+
+customized_readme
+
+runtime_configs
+
+
