@@ -1,0 +1,11 @@
+{
+  "additional_special_tokens": [
+    "<system>",
+    "<user>",
+    "<assistant>"
+  ],
+  "bos_token": "<bos>",
+  "eos_token": "<eos>",
+  "pad_token": "<pad>",
+  "unk_token": "<unk>"
+}
