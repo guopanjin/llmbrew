@@ -61,10 +61,12 @@ def verify_bin_data():
               dtype=np.uint16,
               mode="r"
               )
-    token_size=data.size
+    logger.info(f"data_shape:{data.shape[0]}")
+    token_size=data.shape[0]
     logger.info(f"token_size:{token_size}")
     tokenizer:PreTrainedTokenizerFast=AutoTokenizer.from_pretrained(os.path.expanduser(tokenizer_path),use_fast=True)
     sampleTokenids=data[2000:5000]
+    logger.info(f"sampleTokenids shape:{sampleTokenids.shape[0]}")
     logger.info(f"sampleTokenIds:{sampleTokenids},type:{type(sampleTokenids)}")
     sampleTokenid_list=list(sampleTokenids)
     decoded = tokenizer.decode(sampleTokenid_list,
