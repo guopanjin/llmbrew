@@ -37,11 +37,11 @@ SwigluMLP is just for transformer MLP that is for decoder only
 for swiglu,intermediate size should be the 8/3 times of hidden_dim.
 '''
 class SwiGluMLP(nn.Module):
-    def __init__(self,hidden_dim,
-                 intermediate_size:int=None):
+    def __init__(self, hidden_dim,
+                 intermediate_dim:int=None):
         super().__init__()
         self.hidden_dim=hidden_dim
-        self.intermediate_size=intermediate_size if intermediate_size is not None else int(8/3*self.hidden_dim)
+        self.intermediate_size=intermediate_dim if intermediate_dim is not None else int(8 / 3 * self.hidden_dim)
         self.gate_layer=nn.Linear(self.hidden_dim,self.intermediate_size)
         self.value_layer=nn.Linear(self.hidden_dim,self.intermediate_size)
         self.out_proj_layer=nn.Linear(self.intermediate_size, self.hidden_dim)
