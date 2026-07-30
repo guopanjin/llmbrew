@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from llmbrew.utils import Logger
+from llmbrew.model.layers import DecoderLayer
 logger=Logger.get_logger()
 class LLMBrewConfig():
     def __int__(self,
@@ -9,21 +10,39 @@ class LLMBrewConfig():
                 hidden_dim:int=320,
                 num_heads:int=5,
                 intermediate_dim:int=864,
-                num_decoder_layers:int=4
+                num_decoder_layers:int=4,
+                causal_mask:int=True
                 ):
         self.vocab_size=vocab_size
         self.hidden_dim=hidden_dim
         self.num_heads=num_heads
         self.intermediate_dim=intermediate_dim
+        self.num_decoder_layers=num_decoder_layers
+        self.causal_mask=causal_mask
 
 class LLMBrewModel(nn.Module):
     def __init__(self,llmbrewconfig:LLMBrewConfig):
         super(LLMBrewModel, self).__init__()
         self.llmbrewconfig=llmbrewconfig
+        self.embedding_table = nn.Embedding(num_embeddings=self.llmbrewconfig.vocab_size, embedding_dim=self.llmbrewconfig.hidden_dim)
+        decoder_layer_list=[DecoderLayer(hidden_dim=self.llmbrewconfig.hidden_dim,
+                                          num_heads=self.llmbrewconfig.num_heads,
+                                          intermediate_dim=self.llmbrewconfig.intermediate_dim,
+                                          causal_mask=self.llmbrewconfig.causal_mask) for _ in range(self.llmbrewconfig.num_decoder_layers)]
+        self.decoder_layers=nn.ModuleList(decoder_layer_list)
+        logger.info(f"llmbrewmodel config {self.llmbrewconfig.__dict__}")
     '''
     input:
-    x:(feature_tensor,label_tensor)
-    x_shape:([batch_size,seq_len],[batch_size,seq_len])
+    input_ids:[batch_size,seq_len],
+    output:logits #[batch_size,seq_len,vocab_size]
     '''
-    def forward(self,x):
-        pass
+    def forward(self,inputs_id):
+        hidden_state=self.embedding_table(inputs_id) #(batch_size,seq_len,hidden_dim)
+        hidden_state=self.decoder_layers(hidden_state)#(batch_size,seq_len,hidden_dim)
+        vocab_index=torch.arange(self.llmbrewconfig.vocab_size,device=inputs_id.device)
+        vocab_embedding=self.embedding_table(vocab_index)#(vocab_size,hidden_dim)
+        logits=hidden_state@vocab_embedding.T #(batch_size,seq_len,vocab_size)
+        return logits
+
+
+
