@@ -3,9 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from llmbrew.utils import Logger
 from llmbrew.model.layers import DecoderLayer
+from llmbrew.model.layers.initialization_functions import init_embedding
 logger=Logger.get_logger()
 class LLMBrewConfig():
-    def __int__(self,
+    def __init__(self,
                 vocab_size:int=16000,
                 hidden_dim:int=320,
                 num_heads:int=5,
@@ -20,6 +21,7 @@ class LLMBrewConfig():
         self.num_decoder_layers=num_decoder_layers
         self.causal_mask=causal_mask
 
+
 class LLMBrewModel(nn.Module):
     def __init__(self,llmbrewconfig:LLMBrewConfig):
         super(LLMBrewModel, self).__init__()
@@ -31,6 +33,7 @@ class LLMBrewModel(nn.Module):
                                           causal_mask=self.llmbrewconfig.causal_mask) for _ in range(self.llmbrewconfig.num_decoder_layers)]
         self.decoder_layers=nn.ModuleList(decoder_layer_list)
         logger.info(f"llmbrewmodel config {self.llmbrewconfig.__dict__}")
+        self.apply(lambda m: init_embedding(m))
     '''
     input:
     input_ids:[batch_size,seq_len],
@@ -38,7 +41,8 @@ class LLMBrewModel(nn.Module):
     '''
     def forward(self,inputs_id):
         hidden_state=self.embedding_table(inputs_id) #(batch_size,seq_len,hidden_dim)
-        hidden_state=self.decoder_layers(hidden_state)#(batch_size,seq_len,hidden_dim)
+        for decoder_layer in self.decoder_layers:
+            hidden_state=decoder_layer(hidden_state)#(batch_size,seq_len,hidden_dim)
         vocab_index=torch.arange(self.llmbrewconfig.vocab_size,device=inputs_id.device)
         vocab_embedding=self.embedding_table(vocab_index)#(vocab_size,hidden_dim)
         logits=hidden_state@vocab_embedding.T #(batch_size,seq_len,vocab_size)

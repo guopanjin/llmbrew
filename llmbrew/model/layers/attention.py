@@ -42,7 +42,7 @@ class MultiHeadAttention(nn.Module):
         #add rope
         q=self.rope(q)
         k=self.rope(k)
-        attention_score=q@k.T #(batch_size,num_heads,seq_len,seq_len)
+        attention_score=q@torch.transpose(k,-1,-2) #(batch_size,num_heads,seq_len,seq_len)
         if self.causal_mask:
             mask=torch.ones(size=(seq_len,seq_len),device=x.device)
             mask=torch.triu(mask,diagonal=1).to(torch.bool)
