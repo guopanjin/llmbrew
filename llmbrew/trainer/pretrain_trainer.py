@@ -108,6 +108,7 @@ class PretrainTrainer:
                 self.optimizer.zero_grad() #clear gradient
                 loss.backward() # get the gradient
                 #Add grad clip,in case some batches genearate abnormal graditent,and will break the normal parameters.
+                #Retrun the raw grad norm before clipping
                 grad_norm=torch.nn.utils.clip_grad_norm_(model.parameters(),max_norm=self.grad_max_norm)
                 self.optimizer.step()
                 ####evaluation part
@@ -132,7 +133,7 @@ class PretrainTrainer:
                         "global_size":self.global_size,
                         "global_tokens":self.global_tokens,
                         "global_step":self.global_step,
-                        "grad_norm":grad_norm,
+                        "grad_norm":grad_norm.detach().cpu().item(),
                         "num_classes":self.num_classes,
                         "step_loss_ppl": np.round(np.exp(step_loss),4),
                         "ema_loss_ppl":np.round(np.exp(ema_loss),4)
