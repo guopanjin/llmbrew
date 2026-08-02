@@ -9,12 +9,15 @@ return (featureslabels)
 '''
 logger=Logger.get_logger()
 class  PretrainDataset(IterableDataset):
-   def __init__(self,data_path,
+   def __init__(self,
+                data_path,
                 context_length=512,
+                is_train:bool=False,
                 batch_size=1000):
        self.data_path=os.path.expanduser(data_path)
        self.context_length=context_length
        self.batch_size=batch_size
+       self.is_train=is_train
        self.file_list=sorted(self.__get_file_list())# make sure the dataset is stable
    def __get_file_list(self):
        file_list=[]
@@ -26,16 +29,45 @@ class  PretrainDataset(IterableDataset):
            file_list.append(os.path.expanduser(self.data_path))
        logger.info(f"file_list:{file_list}")
        return file_list
+
+   '''
+      return (features,labels)==>([batch_size,seq_len],[batch_size,seq_len])
+      In train stage,we need to shuffle the data,in case of loss spike because of different type of corpus.
+      For example,if the first 50% of tokens are chinese tokens,the rest of tokens are english tokens.
+      and the loss will have a spike when the Chinese tokens is changing to English tokens during train stage.
+   '''
+   def __parse_data_v2(self, file):
+       if ".bin" in file:
+           np_data = np.memmap(file, dtype=np.uint16, mode="r")
+           size = np_data.shape[0]
+           num_blocks=size//(self.context_length+1)
+           block_indexs=np.random.permutation(num_blocks)
+           logger.info(f"data_stage:train_stage, start to read data from {file},size={size}")
+           batch_cnt=0
+           batch_list=[]
+           for block_index in block_indexs:
+               start_index=block_index*(self.context_length+1)
+               end_index=start_index+self.context_length+1
+               block=np.array(np_data[start_index:end_index], dtype=np.int64, copy=True)
+               batch_list.append(block)
+               batch_cnt+=1
+               if (batch_cnt==self.batch_size):
+                   chunk=np.stack(batch_list,axis=0)
+                   features = chunk[:, :-1]
+                   labels = chunk[:, 1:]
+                   batch_list=[]
+                   batch_cnt=0
+                   yield (features, labels)
    '''
    return (features,labels)==>([batch_size,seq_len],[batch_size,seq_len])
    '''
-   def __parse_data(self,file):
+   def __parse_data_v1(self, file):
        if ".bin" in file:
            np_data=np.memmap(file,dtype=np.uint16,mode="r")
            size=np_data.shape[0]
            read_size=0
            read_start_index=0
-           logger.info(f"start to read data from {file},size={size}")
+           logger.info(f"data_stage:validataion_stage,start to read data from {file},size={size}")
            while read_size<=size:
                read_end_index =read_start_index+ self.batch_size * (self.context_length+1)
                if read_end_index >size:#numpy slice does not include right side,so the end index can be size
@@ -53,10 +85,10 @@ class  PretrainDataset(IterableDataset):
        worker_info=get_worker_info()
        if worker_info is None:
            for file in self.file_list:
-               yield from self.__parse_data(file)
+               yield from self.__parse_data_v2(file) if self.is_train else self.__parse_data_v1(file)
        else:
            worker_number= worker_info.num_workers
            worker_id= worker_info.id
            for index,file in enumerate(self.file_list):
                if index%worker_number==worker_id:
-                   yield from self.__parse_data(file)
+                   yield from self.__parse_data_v2(file) if self.is_train else self.__parse_data_v1(file)

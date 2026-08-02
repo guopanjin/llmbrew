@@ -33,7 +33,9 @@ def get_constantLR(*,
                                                              factor=min_lr / base_lr,
                                                              total_iters=constant_steps)
     return constant_scheduler
-
+'''
+WSD = Warmup-Stable-Decay
+'''
 class StreamingScheduler:
     def __init__(self,
                  optimizer,

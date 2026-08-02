@@ -23,6 +23,7 @@ class MultiHeadAttention(nn.Module):
         self.v_layer=nn.Linear(self.hidden_dim,self.hidden_dim)
         self.out_proj_layer=nn.Linear(self.hidden_dim,self.hidden_dim)
         self.rope=ROPE()
+        self.scale=self.head_dim**(-0.5)
 
     '''
     x:(batch_size,seq_len,hidden_dim)
@@ -43,6 +44,7 @@ class MultiHeadAttention(nn.Module):
         q=self.rope(q)
         k=self.rope(k)
         attention_score=q@torch.transpose(k,-1,-2) #(batch_size,num_heads,seq_len,seq_len)
+        attention_score = attention_score * self.scale
         if self.causal_mask:
             mask=torch.ones(size=(seq_len,seq_len),device=x.device)
             mask=torch.triu(mask,diagonal=1).to(torch.bool)
