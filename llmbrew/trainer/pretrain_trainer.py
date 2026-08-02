@@ -162,10 +162,11 @@ class PretrainTrainer:
             logger.info("restore the best model weight to the current model")
         self._save_final_model()
     def _save_best_model(self):
+        os.makedirs(os.path.expanduser(self.best_model_dir), exist_ok=True)
         checkpoint_state={
             "model_state_dict":self.model.state_dict(),
-            "optimzier":self.optimizer,
-            "scheduler":self.scheduler,
+            "optimizer":self.optimizer.state_dict(),
+            "scheduler":self.scheduler.state_dict(),
             "global_tokens":self.global_tokens,
             "global_size":self.global_size,
             "global_step":self.global_step,
@@ -174,23 +175,27 @@ class PretrainTrainer:
         model_path=os.path.join(os.path.expanduser(self.best_model_dir),f"{self.model_name}_best.pt")
         torch.save(checkpoint_state,model_path)
     def _save_checkpoints(self):
+        os.makedirs(os.path.expanduser(self.checkpoints_model_dir), exist_ok=True)
         checkpoint_state = {
             "model_state_dict": self.model.state_dict(),
-            "optimzier": self.optimizer,
-            "scheduler": self.scheduler,
+            "optimizer": self.optimizer.state_dict(),
+            "scheduler": self.scheduler.state_dict(),
             "global_tokens": self.global_tokens,
             "global_size": self.global_size,
             "global_step": self.global_step
         }
-        #save latest 3 checkpoints
+        #save latest checkpoint
+        model_path = os.path.join(os.path.expanduser(self.checkpoints_model_dir),
+                                  f"{self.model_name}_{self.global_step}.pt")
+        torch.save(checkpoint_state, model_path)
+        #remove the old checkpoint
         paths_list=glob.glob(os.path.join(os.path.expanduser(self.checkpoints_model_dir),f"{self.model_name}_*.pt"))
         paths_tuple=[(path,int(path.split("_")[-1].split(".")[0])) for path in paths_list]
         sorted_paths_list=sorted(paths_tuple,key=lambda x:x[1],reverse=False)
         remove_paths=sorted_paths_list[:-self.max_checkpoints_to_keep]
         for remove_path in remove_paths:
-            os.remove(remove_path)
-        model_path=os.path.join(os.path.expanduser(self.checkpoints_model_dir), f"{self.model_name}_{self.global_step}.pt")
-        torch.save(checkpoint_state,model_path)
+            os.remove(remove_path[0])
+            logger.info(f"remove old model {remove_path[0]}")
 
     def _save_final_model(self):
         os.makedirs(os.path.expanduser(self.final_model_dir),exist_ok=True)
@@ -219,10 +224,10 @@ class PretrainTrainer:
             size_sum+=step_size
         validation_loss=np.round(loss_sum/size_sum,4)
         if validation_loss<self.best_validation_loss:
-            self._save_best_model()
-            logger.info(f"successfully saved the best loss {validation_loss} old loss:{self.best_validation_loss}")
+            logger.info(f"saved the best loss {validation_loss} old loss:{self.best_validation_loss}")
             #update best_validation_loss
             self.best_validation_loss=validation_loss
+            self._save_best_model()
         normal_loss=0.0
         if self.num_classes is not None and self.num_classes>0:
             normal_loss = np.round(validation_loss/np.log(self.num_classes),4)
