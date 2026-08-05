@@ -47,6 +47,35 @@ class LLMBrewModel(nn.Module):
         hidden_state=self.final_normal(hidden_state)
         logits=hidden_state@self.embedding_table.weight.T #(batch_size,seq_len,vocab_size)
         return logits
+    '''
+    input:
+    input_ids:[batch_size,prompt_len]
+    TODO:need to change code to support batch
+    '''
+    def generate(self,input_ids,
+                 temperature=1.0,
+                 top_k=40,
+                 do_sample=True,
+                 eos_token_id=2,
+                 max_new_tokens=50):
+        prompt_len=input_ids.shape[1]
+        for _ in range(max_new_tokens):
+            output=self.forward(input_ids)[:,-1,:] #[batch_size,vocab_size]
+            if do_sample:
+                output = output / temperature
+                output,indices=torch.sort(output,dim=-1,descending=True)
+                indices=indices[:,:top_k]
+                output=output[:,:top_k]
+                output=F.softmax(output,dim=-1)
+                sample_index=torch.multinomial(output,num_samples=1)
+                last_output=indices[:,sample_index].reshape(shape=(-1,1))
+            else:
+                last_output=torch.argmax(output,dim=-1,keepdim=True)#[batch_size,1]
+            new_inputs=torch.concat([input_ids,last_output],dim=-1)#[batch_size,seq_len+1]
+            input_ids=new_inputs
+            if last_output[:, 0] == eos_token_id:
+                break;
+        return input_ids[:,prompt_len:]
 
 
 

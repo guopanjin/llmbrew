@@ -4,6 +4,22 @@ from llmbrew.trainer import PretrainTrainer
 from llmbrew.utils import get_device,prevent_sleep
 from llmbrew.dataset import PretrainDataset
 from torch.utils.data import Dataset,DataLoader
+
+'''
+2026-08-02 08:38:52 | INFO | pretrain_trainer.py:124 | {'model': 'pretrain_model', 'duration': '444.656min', 'stage': 'training', 'epoch': 1, 'step_size': 100, 'step_loss': 4.024149417877197, 'ema_loss': 3.9061509527569775, 'global_size': 432000, 'global_tokens': 221184000, 'global_step': 4320, 'grad_norm': tensor(0.3005), 'num_classes': 16000, 'step_loss_ppl': 55.9327, 'ema_loss_ppl': 49.7073}
+2026-08-02 08:40:57 | INFO | pretrain_trainer.py:124 | {'model': 'pretrain_model', 'duration': '446.742min', 'stage': 'training', 'epoch': 1, 'step_size': 100, 'step_loss': 3.9475033283233643, 'ema_loss': 3.8866857063467353, 'global_size': 434000, 'global_tokens': 222208000, 'global_step': 4340, 'grad_norm': tensor(0.3015), 'num_classes': 16000, 'step_loss_ppl': 51.8059, 'ema_loss_ppl': 48.749}
+2026-08-02 08:43:02 | INFO | pretrain_trainer.py:124 | {'model': 'pretrain_model', 'duration': '448.824min', 'stage': 'training', 'epoch': 1, 'step_size': 100, 'step_loss': 3.7992281913757324, 'ema_loss': 3.8530637970729438, 'global_size': 436000, 'global_tokens': 223232000, 'global_step': 4360, 'grad_norm': tensor(0.2963), 'num_classes': 16000, 'step_loss_ppl': 44.6667, 'ema_loss_ppl': 47.1373}
+2026-08-02 08:44:57 | INFO | pretrain_dataset.py:70 | data_stage:validataion_stage,start to read data from /Users/jinguopan/.llmbrew/data/validation/v1/validation.bin,size=937236
+2026-08-02 08:45:42 | INFO | pretrain_dataset.py:74 | read_end_index >size-1 break,read_end_index:974700,size-1:937235
+2026-08-02 08:45:42 | INFO | pretrain_trainer.py:227 | saved the best loss 3.9727 old loss:3.9929
+2026-08-02 08:45:42 | INFO | pretrain_trainer.py:234 | {'stage': 'validation', 'model_name': 'pretrain_model', 'epoch': 1, 'validation_number': 1800, 'validation_loss': 3.9727, 'normal_loss': 0.4104, 'validation_ppl': 53.1278, 'num_classes': 16000}
+2026-08-02 08:45:43 | INFO | pretrain_trainer.py:208 | successfully save model to the path /Users/jinguopan/.llmbrew/model_outputs/pretrain/final_model/pretrain_model.pt
+
+
+'''
+
+
+
 #data path
 train_data_path=data_config.train_bin_path
 validation_data_path=data_config.validation_bin_path

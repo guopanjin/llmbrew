@@ -21,10 +21,10 @@ input:(
    label_dict:label:(batch_size,seq_len)
 )
 TODO:
-1:self.scheduler initialization
-2:save model config for checkpoints
+1:self.scheduler initialization to handle the None issue
+
 '''
-class PretrainTrainer:
+class SFTTrainer:
     def __init__(self,
                  *,
                  model_name:str,
@@ -49,12 +49,15 @@ class PretrainTrainer:
                  use_early_stop=False,
                  step_early_stop=False,
                  num_classes:int=None,
-                 grad_max_norm:float=1.0
+                 grad_max_norm:float=1.0,
+                 label_padding_id:int=-100,
+                 lr=1e-3
                  ):
         self.model_name=model_name
         self.model=model
-        self.loss_fn=loss_fn if loss_fn is not None else nn.CrossEntropyLoss()
-        self.optimizer=optimizer if optimizer is not None else build_adamw_with_decay_groups(self.model)
+        self.loss_fn=loss_fn if loss_fn is not None else nn.CrossEntropyLoss(ignore_index=label_padding_id)
+        self.lr=lr
+        self.optimizer=optimizer if optimizer is not None else build_adamw_with_decay_groups(self.model,lr=lr)
         self.use_warm_up=use_warm_up
         self.warm_up_steps=warm_up_steps
         self.train_dataloader=train_dataloader
@@ -78,11 +81,13 @@ class PretrainTrainer:
         self.checkpoints_step=checkpoints_step
         self.max_checkpoints_to_keep=max_checkpoints_to_keep
         self.best_validation_loss=float("inf")
+        self.label_padding_id=label_padding_id
+        self.scheduler =None
         if self.use_warm_up:
             self.scheduler = get_linear_scheduler(optimizer=self.optimizer, warmup_steps=self.warm_up_steps)
         logger.info(f"device:{self.device}")
         logger.info(f"{self.model_name} structure:\n {self.model}")
-        logger.info(f"pretrain trainer parameters config:{self.__dict__}")
+        logger.info(f"sft trainer parameters config:{self.__dict__}")
     def train(self):
         early_stop=None
         if self.use_early_stop:
@@ -102,6 +107,9 @@ class PretrainTrainer:
             for inputids,labels in self.train_dataloader:
                 inputids=inputids.to(self.device)
                 labels=labels.to(self.device)
+                # shift inputs and labels
+                inputids = inputids[:, :-1]
+                labels = labels[:, 1:]
                 step_size = labels.shape[0]
                 seq_len=labels.shape[1]
                 labels=torch.reshape(labels,(-1,))
@@ -130,6 +138,7 @@ class PretrainTrainer:
                         "duration":str(np.round((end_time-start_time)/60,3))+"min",
                         "stage":"training",
                         "epoch":epoch,
+                        "lr":self.optimizer.param_groups[0]["lr"],
                         "step_size":step_size,
                         "step_loss":step_loss,
                         "ema_loss":ema_loss,
@@ -182,6 +191,7 @@ class PretrainTrainer:
         os.makedirs(os.path.expanduser(self.checkpoints_model_dir), exist_ok=True)
         checkpoint_state = {
             "model_state_dict": self.model.state_dict(),
+            "config": self.model.llmbrewconfig,
             "optimizer": self.optimizer.state_dict(),
             "scheduler": self.scheduler.state_dict(),
             "global_tokens": self.global_tokens,
@@ -218,11 +228,13 @@ class PretrainTrainer:
         for inputids,labels  in self.validation_dataloader:
             inputids = inputids.to(self.device)
             labels = labels.to(self.device)
-            step_size=labels.shape[0]
+            #shift inputs and labels
+            inputids=inputids[:,:-1]
+            labels=labels[:,1:]
             labels = torch.reshape(labels, (-1,))
+            step_size = (labels!=self.label_padding_id).sum().item()
             logits = self.model(inputids)  # (batch_size,seq_len,num_items+1)
             logits = torch.reshape(logits, (-1, logits.shape[-1]))
-            # ignore_index,will ignore the value of label is 0
             loss = self.loss_fn(input=logits, target=labels)
             loss_sum+=loss.cpu().item()*step_size
             size_sum+=step_size

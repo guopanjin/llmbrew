@@ -1,1 +1,2 @@
 from llmbrew.trainer.pretrain_trainer import PretrainTrainer
+from llmbrew.trainer.sft_trainer import SFTTrainer

@@ -195,5 +195,6 @@ if __name__ == '__main__':
     #verify_transformer_tokenizer()
     #show_raw_token()
     #get_specific_token_id()
-    get_special_token_id()
+    #get_special_token_id()
+    get_specific_token_id("<eos>")
     pass
