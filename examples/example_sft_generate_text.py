@@ -112,13 +112,13 @@ def generate_text(input_text,
     '''
     tokenids=torch.unsqueeze(tokenids,dim=0)
 
-    output_ids=model.generate(input_ids=tokenids,
-                              do_sample=do_sample,
-                              temperature=temperature,
-                              top_k=top_k,
-                   max_new_tokens=max_new_tokens,
-                   eos_token_id=2
-                   )
+    output_ids = model.generate(input_ids=tokenids,
+                                    do_sample=do_sample,
+                                    temperature=temperature,
+                                    top_k=top_k,
+                                    max_new_tokens=max_new_tokens,
+                                    eos_token_id=2
+                                    )
     output_tokens=output_ids.detach().tolist()[0]
     response=token_decoder(output_tokens)
     return response
@@ -128,8 +128,7 @@ DEMO_PROMPTS = [
     "How can I stay healthy?",
     "Write a short introduction about yourself.",
 ]
-
-if __name__ == '__main__':
+def generate_demo():
     for prompt in DEMO_PROMPTS:
         system = f"{Constant.SpecialToken.SYSTEM}you are a helpful assistant."
         final_prompt = system + f"{Constant.SpecialToken.USER}{prompt}{Constant.SpecialToken.ASSISTANT}"
@@ -140,6 +139,42 @@ if __name__ == '__main__':
                                max_new_tokens=100)
         print(f"prompt:{final_prompt}")
         print(f"response:{response}")
+
+def generate_stream():
+    for prompt in DEMO_PROMPTS:
+        system = f"{Constant.SpecialToken.SYSTEM}you are a helpful assistant."
+        final_prompt = system + f"{Constant.SpecialToken.USER}{prompt}{Constant.SpecialToken.ASSISTANT}"
+        model.eval()
+        tokenids = token_encoder(final_prompt)
+        if not tokenids:  # in case null value
+            tokenids.append(2)
+        tokenids = torch.tensor(tokenids, dtype=torch.long)
+        '''
+        input:[batch_size,inputids] 
+        return:[batch_size,max_new_tokens]
+        '''
+        tokenids = torch.unsqueeze(tokenids, dim=0)
+
+        output_generator = model.generate_stream(input_ids=tokenids,
+                                    do_sample=True,
+                                    temperature=0.8,
+                                    top_k=40,
+                                    max_new_tokens=100,
+                                    eos_token_id=2
+                                    )
+        acc_tokenid=[]
+        pre=""
+        print(f"prompt:{final_prompt}")
+        for output_id in output_generator:
+            acc_tokenid.append(output_id)
+            output_token=token_decoder(acc_tokenid)
+            print(output_token[len(pre):],end="",flush=True)
+            pre=output_token
+        print()
+if __name__ == '__main__':
+    generate_stream()
+    pass
+
 
 
 

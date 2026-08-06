@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -52,6 +53,7 @@ class LLMBrewModel(nn.Module):
     input_ids:[batch_size,prompt_len]
     TODO:need to change code to support batch
     '''
+    @torch.no_grad()
     def generate(self,input_ids,
                  temperature=1.0,
                  top_k=40,
@@ -59,6 +61,8 @@ class LLMBrewModel(nn.Module):
                  eos_token_id=2,
                  max_new_tokens=50):
         prompt_len=input_ids.shape[1]
+        #validate argements
+        temperature=np.clip(temperature,0.1,100)
         for _ in range(max_new_tokens):
             output=self.forward(input_ids)[:,-1,:] #[batch_size,vocab_size]
             if do_sample:
@@ -76,6 +80,35 @@ class LLMBrewModel(nn.Module):
             if last_output[:, 0] == eos_token_id:
                 break;
         return input_ids[:,prompt_len:]
+
+    @torch.no_grad()
+    def generate_stream(self, input_ids,
+                 temperature=1.0,
+                 top_k=40,
+                 do_sample=True,
+                 eos_token_id=2,
+                 max_new_tokens=50):
+        # validate argements
+        temperature = np.clip(temperature, 0.1, 100)
+        for _ in range(max_new_tokens):
+            output = self.forward(input_ids)[:, -1, :]  # [batch_size,vocab_size]
+            if do_sample:
+                output = output / temperature
+                output, indices = torch.sort(output, dim=-1, descending=True)
+                indices = indices[:, :top_k]
+                output = output[:, :top_k]
+                output = F.softmax(output, dim=-1)
+                sample_index = torch.multinomial(output, num_samples=1)
+                last_output = indices[:, sample_index].reshape(shape=(-1, 1))
+            else:
+                last_output = torch.argmax(output, dim=-1, keepdim=True)  # [batch_size,1]
+            new_inputs = torch.concat([input_ids, last_output], dim=-1)  # [batch_size,seq_len+1]
+            input_ids = new_inputs
+            new_token_id=last_output[:, 0].item()
+            if  new_token_id== eos_token_id:
+                break;
+            yield new_token_id
+
 
 
 
