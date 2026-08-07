@@ -36,8 +36,8 @@ def build_jsonl(data:list[dict],source)->list[dict]:
         prompt = system + f"{Constant.SpecialToken.USER}{instruction}" + f"{input}{Constant.SpecialToken.ASSISTANT}"
         response = output + Constant.SpecialToken.EOS
         line = prompt + response
-        tokenids = tokenizer.encoder(line)
-        prompt_len = len(tokenizer.encoder(prompt))
+        tokenids = tokenizer.encode(line)
+        prompt_len = len(tokenizer.encode(prompt))
         output_json = {
             "input_ids": tokenids,
             "prompt_len": prompt_len,

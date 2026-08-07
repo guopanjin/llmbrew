@@ -38,7 +38,7 @@ def generate_stream():
         system = f"{Constant.SpecialToken.SYSTEM}you are a helpful assistant."
         final_prompt = system + f"{Constant.SpecialToken.USER}{prompt}{Constant.SpecialToken.ASSISTANT}"
         model.eval()
-        tokenids = tokenizer.encoder(final_prompt)
+        tokenids = tokenizer.encode(final_prompt)
         if not tokenids:  # in case null value
             tokenids.append(2)
         tokenids = torch.tensor(tokenids, dtype=torch.long)
@@ -60,7 +60,7 @@ def generate_stream():
         print(f"prompt:{final_prompt}")
         for output_id in output_generator:
             acc_tokenid.append(output_id)
-            output_token=tokenizer.deconder(acc_tokenid)
+            output_token=tokenizer.decode(acc_tokenid)
             print(output_token[len(pre):],end="",flush=True)
             pre=output_token
         print()
@@ -75,7 +75,7 @@ def generate_stream_for_chatbox(prompt,
     system = f"{Constant.SpecialToken.SYSTEM}you are a helpful assistant."
     final_prompt = system + f"{Constant.SpecialToken.USER}{prompt}{Constant.SpecialToken.ASSISTANT}"
     model.eval()
-    tokenids = tokenizer.encoder(final_prompt)
+    tokenids = tokenizer.encode(final_prompt)
     if not tokenids:  # in case null value
         tokenids.append(2)
     tokenids = torch.tensor(tokenids, dtype=torch.long)
@@ -97,7 +97,7 @@ def generate_stream_for_chatbox(prompt,
     print(f"prompt:{final_prompt}")
     for output_id in output_generator:
         acc_tokenid.append(output_id)
-        output_token = tokenizer.deconder(acc_tokenid)
+        output_token = tokenizer.decode(acc_tokenid)
         new_token=output_token[len(pre):]
         pre = output_token
         yield new_token
