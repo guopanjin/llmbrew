@@ -10,6 +10,8 @@
   <img src="https://img.shields.io/badge/Python-3.9+-blue" alt="python">
   <img src="https://img.shields.io/badge/PyTorch-2.0+-ee4c2c" alt="pytorch">
   <img src="https://img.shields.io/badge/Hardware-CPU%20only-success" alt="cpu">
+  <img src="https://img.shields.io/badge/Cost-%240-brightgreen" alt="cost">
+  <img src="https://img.shields.io/badge/UI-Gradio-orange" alt="ui">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="license">
 </p>
 
@@ -17,15 +19,24 @@
 
 ## Train a real LLM on the laptop you already own
 
-No GPU. No cloud account. No cluster. No budget.
+**$0 · One night · No GPU · No cloud**
 
-**11 hours on a MacBook CPU** takes you from raw text to a model that answers questions and knows when to stop talking. Every stage — BPE tokenizer, pretraining, supervised fine-tuning, sampling — is implemented from scratch in ~2,400 lines of Python and runs on hardware you already have.
+Start it before bed. Wake up to your own language model — and a chat
+interface to talk to it.
 
-Nothing here is imported from `transformers` except the tokenizer runtime. Attention, RoPE, RMSNorm, SwiGLU, the training loops, the streaming data pipeline, checkpoint management and the decoding logic are all written from the ground up, so you can read the entire stack rather than navigating a production framework.
+Every stage is written from scratch in ~2,700 lines of Python: BPE
+tokenizer, pretraining, supervised fine-tuning, sampling, and a Gradio
+UI. Nothing is imported from `transformers` except the tokenizer runtime.
+Attention, RoPE, RMSNorm, SwiGLU, the training loops, the streaming data
+pipeline and checkpoint management are all yours to read.
+
+You don't need a GPU. You don't need a cloud account. You don't need to
+know what a transformer is before you start — you will by the time you
+finish.
 
 > **Set expectations first:** the reference model is 10M parameters. It produces fluent, well-formed sentences that are frequently factually wrong. See [What this model cannot do](#what-this-model-cannot-do) before you start — knowing the ceiling in advance is the difference between a satisfying weekend and a disappointing one.
 ---
-## what it looks like?
+## Talk to your own model
 
 ![chatbox](assets/chatbox_1.png)
 
@@ -44,14 +55,12 @@ Nothing here is imported from `transformers` except the tokenizer runtime. Atten
 
 ### Where the time goes
 
-| Stage | Duration | Output |
-| :--- | ---: | :--- |
-| Train BPE tokenizer | ~10 min | 16k vocab |
-| Encode corpus | ~5 min | 112M packed tokens |
-| **Pretrain** | **6.4 h** | base model, val loss 3.97 |
-| Encode SFT data | ~2 min | 100k instruction pairs |
-| **Fine-tune** | **4.3 h** | chat model, val loss 3.15 |
-| Generate | seconds | text |
+| Stage | Duration |
+| :--- | ---: |
+| Tokenizer + encoding | ~15 min |
+| **Pretrain** → base model | **6.4 h** |
+| **Fine-tune** → chat model | **4.3 h** |
+| **Total** | **~11 h (one night)** |
 
 Both training stages checkpoint continuously and restore the best weights automatically, so an interrupted run is never a total loss. Start it before bed, read the logs in the morning.
 
@@ -98,6 +107,13 @@ python examples/example_train_sft_model.py
 ```bash
 python examples/example_sft_generate_text.py
 ```
+**6. Chat with it**
+
+```bash
+python apps/app.py
+```
+
+Opens a local Gradio interface at `http://127.0.0.1:7860`.
 
 ### Using it from Python
 
