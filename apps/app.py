@@ -1,5 +1,5 @@
 import gradio as gr
-from model_inference import generate_stream_for_chatbox
+from apps.model_inference import generate_stream_for_chatbox
 from llmbrew.utils import Logger
 logger=Logger.get_logger()
 
