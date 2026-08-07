@@ -109,6 +109,9 @@ class LLMBrewModel(nn.Module):
                 break;
             yield new_token_id
 
+    def generate_batch_stream(self):
+        pass
+
 
 
 

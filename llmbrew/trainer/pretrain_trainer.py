@@ -78,6 +78,7 @@ class PretrainTrainer:
         self.checkpoints_step=checkpoints_step
         self.max_checkpoints_to_keep=max_checkpoints_to_keep
         self.best_validation_loss=float("inf")
+        self.scheduler=None
         if self.use_warm_up:
             self.scheduler = get_linear_scheduler(optimizer=self.optimizer, warmup_steps=self.warm_up_steps)
         logger.info(f"device:{self.device}")
@@ -183,7 +184,7 @@ class PretrainTrainer:
         checkpoint_state = {
             "model_state_dict": self.model.state_dict(),
             "optimizer": self.optimizer.state_dict(),
-            "scheduler": self.scheduler.state_dict(),
+            "scheduler": self.scheduler.state_dict() if self.scheduler is not None else None,
             "global_tokens": self.global_tokens,
             "global_size": self.global_size,
             "global_step": self.global_step

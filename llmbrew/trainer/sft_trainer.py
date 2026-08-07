@@ -179,7 +179,7 @@ class SFTTrainer:
         checkpoint_state={
             "model_state_dict":self.model.state_dict(),
             "optimizer":self.optimizer.state_dict(),
-            "scheduler":self.scheduler.state_dict(),
+            "scheduler":self.scheduler.state_dict() if self.scheduler is not None else None,
             "global_tokens":self.global_tokens,
             "global_size":self.global_size,
             "global_step":self.global_step,

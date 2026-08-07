@@ -24,6 +24,10 @@ No GPU. No cloud account. No cluster. No budget.
 Nothing here is imported from `transformers` except the tokenizer runtime. Attention, RoPE, RMSNorm, SwiGLU, the training loops, the streaming data pipeline, checkpoint management and the decoding logic are all written from the ground up, so you can read the entire stack rather than navigating a production framework.
 
 > **Set expectations first:** the reference model is 10M parameters. It produces fluent, well-formed sentences that are frequently factually wrong. See [What this model cannot do](#what-this-model-cannot-do) before you start — knowing the ceiling in advance is the difference between a satisfying weekend and a disappointing one.
+---
+## what it looks like?
+
+![chatbox](assets/chatbox_1.png)
 
 ---
 
