@@ -53,6 +53,7 @@ model_outputs
 rawdata_source
 
 ~/
+requirements.lock.txt
 
 
 
