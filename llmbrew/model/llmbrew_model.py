@@ -109,8 +109,38 @@ class LLMBrewModel(nn.Module):
                 break;
             yield new_token_id
 
-    def generate_batch_stream(self):
-        pass
+    @torch.no_grad()
+    def generate_batch_stream(self, input_ids,
+                 temperature=1.0,
+                 top_k=40,
+                 do_sample=True,
+                 eos_token_id=2,
+                 pad_token_id=0,
+                 max_new_tokens=50):
+        # validate argements
+        temperature = np.clip(temperature, 0.1, 100)
+        batch_size=input_ids.shape[0]
+        finished=torch.zeros(size=(batch_size,1),dtype=torch.bool)
+        for _ in range(max_new_tokens):
+            output = self.forward(input_ids)[:, -1, :]  # [batch_size,vocab_size]
+            if do_sample:
+                output = output / temperature
+                output, indices = torch.topk(output,k=top_k, dim=-1)
+                output = F.softmax(output, dim=-1)
+                sample_index = torch.multinomial(output, num_samples=1)
+                last_output=torch.gather(input=indices,dim=-1,index=sample_index) #(batch_size,1)
+            else:
+                last_output = torch.argmax(output, dim=-1, keepdim=True)  # [batch_size,1]
+            last_output=torch.where(finished,pad_token_id,last_output)
+            new_inputs = torch.concat([input_ids, last_output], dim=-1)  # [batch_size,seq_len+1]
+            input_ids = new_inputs
+            #update finished
+            finished= finished | (last_output==eos_token_id)
+            yield last_output.tolist(),finished.tolist()
+            # if all rows of finished is True then return True
+            if finished.all():
+                break;
+
 
 
 
